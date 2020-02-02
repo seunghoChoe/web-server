@@ -19,6 +19,11 @@ public class Session extends Thread{
 	private Socket socket;
 	
 	String LINE_FEED = "\r\n";
+	String SPACE = " ";
+	String HTML_DIRECTORY_PATH = "./html";
+	String HTML_EXTENDER = ".html";
+	String DEFAULT_HTML_FILE = "/index";
+	
 	
 	public Session(String name, Socket socket) {
 		super(name);
@@ -36,13 +41,13 @@ public class Session extends Thread{
 	}
 	
 	public void run() {
-		this.processRequest();
-		this.processResponse();
+		String requestURI = this.processRequest();
+		this.processResponse(requestURI);
 		this.finalize();
 	}
 	
-	private void processRequest() {
-		System.out.println(this.getName() + "processRequest()");
+	private String processRequest() {
+		System.out.println(this.getName() + ": processRequest()");
 		String request = new String();
 		Stream<String> stream = this.bufferedReader.lines();
 		Iterator<String> iterator = stream.iterator();
@@ -51,15 +56,22 @@ public class Session extends Thread{
 			request += line + LINE_FEED;
 			if(line.isEmpty()) break;
 		}
+		String[] tokens = request.split(LINE_FEED);
+		String[] heads = tokens[0].split(SPACE);
+		System.out.println("request path: " + heads[1]);
+		return heads[1];
 	}
 
-	private void processResponse() {
-		System.out.println(this.getName() + "processResponse()");
+	private void processResponse(String requestURI) {
+		System.out.println(this.getName() + ": processResponse()");
 		String message = new String();
 		String header = new String();
 		String body = new String();
 		try {
-			BufferedReader bufferedReader = new BufferedReader(new FileReader("./html/index.html"));
+			if(requestURI.equals("/")) requestURI = DEFAULT_HTML_FILE;
+			String htmlFilePath = HTML_DIRECTORY_PATH + requestURI + HTML_EXTENDER;
+			System.out.println("html file path : " + htmlFilePath);
+			BufferedReader bufferedReader = new BufferedReader(new FileReader(htmlFilePath));
 			Stream<String> stream = bufferedReader.lines();
 			Iterator<String> iterator = stream.iterator();
 			while(iterator.hasNext()) {
@@ -91,7 +103,6 @@ public class Session extends Thread{
 	}
 
 	public void finalize() {
-		System.out.println("finalize()");
 		try {
 			this.bufferedReader.close();
 			this.bufferedWriter.close();
